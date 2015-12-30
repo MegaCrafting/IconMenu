@@ -14,4 +14,85 @@
 			} else {
 			}
 		}
+	
+	
+	//Add a dmPlayer whenever a player joins.	
+	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerJoin(PlayerJoinEvent event) 
+	{
+		dmPlayer dmp = dmPlayer.finddmPlayer(event.getPlayer());
+		System.out.println("New Player Joined " + event.getPlayer().getName() + " Adding DMP " + dmp.getPlr().getName() + " total dmp's " + DeathMatch.dmPlayers.size());
+	}		
+
+	//Remove a dmPlayer when a player leaves.
+	//Note this method intentinally doesen't return on a match to clean the list just in case there was a second dmPlayer for that player.
+	//Although that should never happen.
+	
+	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerDC(PlayerQuitEvent event) 
+	{
+		Player plr = event.getPlayer();
+		dmPlayer dmp = dmPlayer.finddmPlayer(plr);
+			if(!DeathMatch.dmPlayers.isEmpty()) {
+		for(dmPlayer dmc : DeathMatch.dmPlayers)
+			if(dmc.getPlr() == dmp.getPlr())
+				DeathMatch.dmPlayers.remove(dmc);
+
+		}
+	}
+
+	//quick sign listener... note this is only useful if players can't create their own signs...   Otherwise they could create
+	//signs to open menus and shit.
+	@EventHandler
+	public void onPlayerInteract(PlayerInteractEvent event){
+		Player player = event.getPlayer();
+		Action action = event.getAction();
+
 		
+		if(action == Action.RIGHT_CLICK_BLOCK) {
+
+			if(event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN)  {    
+				Sign sign = (Sign) event.getClickedBlock().getState();
+				String lines[] = sign.getLines();
+				dmPlayer dmp = dmPlayer.finddmPlayer(event.getPlayer());
+				if(DeathMatch.mode != 0) {  //Events that should only happen while a map is active.
+					for(int i = 0; i < lines.length; i++) {
+						if(lines[i].contains("Respawn"))  //respawns a player after they've died (we dont auto do this because they might wanna buy new guns before returning to play)
+						{
+							if(dmp.getRespawnTask() == 0) {
+								if((DeathMatch.startTime + GameTimer.getSelMode().getTimeLimit()- System.currentTimeMillis()) >= 7)
+									dmp.setRespawnTask(Bukkit.getScheduler().scheduleSyncRepeatingTask(DeathMatch.plugin, new RespawnTimer(DeathMatch.plugin, dmp), 0L, 20L));
+								else
+									player.sendMessage(ChatColor.RED + "Sorry that game is nearly over!  Wait until the next round!");  //respawning them with a task after the round end causes teleporting... dont do that.
+							}
+								
+
+						}
+					}
+					
+
+				} else {
+					//these should only happen if in lobby and NOT in a game. IE Never..
+				}
+				
+				//These signs can be clicked at any time.
+				for(int i = 0; i < lines.length; i++) {
+					if(lines[i].contains("GunShop"))  
+					{
+
+						dmp.buildBasicGunMenu(dmp.getPlr());
+						dmp.getMenu().open(player);
+					}
+				}
+				for(int i = 0; i < lines.length; i++) {
+					if(lines[i].contains("Main Menu"))  
+					{
+
+						dmp.buildMainMenu(dmp.getPlr());
+						dmp.getMenu().open(player);
+					}
+				}
+
+			}
+		}
+	}
