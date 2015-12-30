@@ -1,0 +1,17 @@
+//access to menu's is pretty simple.
+//this bit of code is from the command listener.
+
+		if (Arrays.asList(votealiases).contains(args[0].toLowerCase())) 
+		{
+			//	System.out.println("Command was:" + cmd);	
+			if(args.length <= 1 && (!args[0].equalsIgnoreCase("/yes") && !args[0].equalsIgnoreCase("/no")))
+			{
+				dmPlayer dmp = dmPlayer.finddmPlayer(sender);
+				dmp.buildMainMenu(sender);
+				dmp.getMenu().open(sender);
+				event.setCancelled(true);
+				return;
+			} else {
+			}
+		}
+		
